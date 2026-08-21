@@ -1,0 +1,131 @@
+<div class="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+
+  <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+
+    <!-- Logo / Heading -->
+    <div class="text-center mb-8">
+
+      <h1 class="text-3xl font-bold text-gray-800">
+        Welcome Back
+      </h1>
+
+      <p class="text-gray-500 mt-2">
+        Login to your account
+      </p>
+
+    </div>
+
+
+    <!-- Login Form -->
+    <form (ngSubmit)="login()" #loginForm="ngForm">
+
+      <!-- Username / Email -->
+      <div class="mb-5">
+
+        <label
+          for="usernameOrEmail"
+          class="block text-sm font-medium text-gray-700 mb-2">
+          Username or Email
+        </label>
+
+        <input
+          id="usernameOrEmail"
+          name="usernameOrEmail"
+          type="text"
+          [(ngModel)]="usernameOrEmail"
+          placeholder="Enter username or email"
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg
+                 focus:outline-none focus:ring-2 focus:ring-blue-500
+                 focus:border-transparent"
+        />
+
+      </div>
+
+
+      <!-- Password -->
+      <div class="mb-5">
+
+        <label
+          for="password"
+          class="block text-sm font-medium text-gray-700 mb-2">
+          Password
+        </label>
+
+        <input
+          id="password"
+          name="password"
+          type="password"
+          [(ngModel)]="password"
+          placeholder="Enter password"
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg
+                 focus:outline-none focus:ring-2 focus:ring-blue-500
+                 focus:border-transparent"
+        />
+
+      </div>
+
+
+      <!-- Error Message -->
+      @if (errorMessage) {
+
+        <div class="mb-5 p-3 bg-red-100 border border-red-300
+                    text-red-700 rounded-lg">
+
+          {{ errorMessage }}
+
+        </div>
+
+      }
+
+
+      <!-- Success Message -->
+      @if (successMessage) {
+
+        <div class="mb-5 p-3 bg-green-100 border border-green-300
+                    text-green-700 rounded-lg">
+
+          {{ successMessage }}
+
+        </div>
+
+      }
+
+
+      <!-- Login Button -->
+      <button
+        type="submit"
+        class="w-full bg-blue-600 hover:bg-blue-700
+               text-white font-semibold py-3 rounded-lg
+               transition duration-200">
+
+        Login
+
+      </button>
+
+    </form>
+
+
+    <!-- Demo Credentials -->
+    <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+
+      <p class="font-semibold text-gray-700 mb-2">
+        Demo Credentials
+      </p>
+
+      <p class="text-sm text-gray-600">
+        Username: tasawar
+      </p>
+
+      <p class="text-sm text-gray-600">
+        Email: tasawar@gmail.com
+      </p>
+
+      <p class="text-sm text-gray-600">
+        Password: 123456
+      </p>
+
+    </div>
+
+  </div>
+
+</div>
