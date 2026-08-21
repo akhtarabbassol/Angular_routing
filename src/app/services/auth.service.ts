@@ -1,107 +1,246 @@
-import { Injectable } from '@angular/core';
+import {
+  Injectable
+} from '@angular/core';
+
 
 interface User {
+
   username: string;
+
   email: string;
+
   password: string;
+
 }
+
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
 
-  private users: User[] = [];
+
+  private storageKey =
+    'angular_mail_users';
+
 
   constructor() {
 
-    const savedUsers =
-      localStorage.getItem('users');
+    this.createDefaultUser();
 
-    if (savedUsers) {
+  }
 
-      this.users = JSON.parse(savedUsers);
+
+  // ======================================
+  // CREATE DEFAULT USER
+  // ======================================
+
+  private createDefaultUser(): void {
+
+    const users =
+      this.getUsers();
+
+
+    if (users.length === 0) {
+
+      const defaultUser: User = {
+
+        username: 'admin',
+
+        email: 'admin@gmail.com',
+
+        password: '123456'
+
+      };
+
+
+      localStorage.setItem(
+
+        this.storageKey,
+
+        JSON.stringify([
+          defaultUser
+        ])
+
+      );
 
     }
 
   }
 
 
-  // ==========================
-  // SIGN UP
-  // ==========================
+  // ======================================
+  // GET USERS
+  // ======================================
+
+  private getUsers(): User[] {
+
+    const data =
+      localStorage.getItem(
+        this.storageKey
+      );
+
+
+    return data
+      ? JSON.parse(data)
+      : [];
+
+  }
+
+
+  // ======================================
+  // SIGNUP
+  // ======================================
 
   signup(
-    username: string,
-    email: string,
-    password: string
-  ) {
 
-    const exists = this.users.some(
-      user =>
-        user.username === username ||
-        user.email === email
-    );
+    username: string,
+
+    email: string,
+
+    password: string
+
+  ): boolean {
+
+
+    const users =
+      this.getUsers();
+
+
+    const exists =
+      users.some(
+
+        user =>
+          user.username
+            .toLowerCase() ===
+            username.toLowerCase()
+
+          ||
+
+          user.email
+            .toLowerCase() ===
+            email.toLowerCase()
+
+      );
+
 
     if (exists) {
 
-      return {
-        success: false,
-        message:
-          'Username or email already exists.'
-      };
+      return false;
 
     }
 
 
-    const newUser: User = {
+    users.push({
 
       username,
+
       email,
+
       password
 
-    };
+    });
 
-
-    this.users.push(newUser);
 
     localStorage.setItem(
-      'users',
-      JSON.stringify(this.users)
+
+      this.storageKey,
+
+      JSON.stringify(users)
+
     );
 
 
-    return {
-      success: true,
-      message:
-        'Account created successfully.'
-    };
+    return true;
 
   }
 
 
-  // ==========================
+  // ======================================
   // LOGIN
-  // ==========================
+  // ======================================
 
   login(
-    usernameOrEmail: string,
+
+    identifier: string,
+
     password: string
-  ) {
 
-    return this.users.find(
+  ): boolean {
 
-      user =>
 
-        (
-          user.username === usernameOrEmail ||
-          user.email === usernameOrEmail
-        )
+    const users =
+      this.getUsers();
 
-        &&
 
-        user.password === password
+    const user =
+      users.find(
 
+        item =>
+
+          (
+
+            item.username
+              .toLowerCase() ===
+              identifier.toLowerCase()
+
+            ||
+
+            item.email
+              .toLowerCase() ===
+              identifier.toLowerCase()
+
+          )
+
+          &&
+
+          item.password === password
+
+      );
+
+
+    if (!user) {
+
+      return false;
+
+    }
+
+
+    localStorage.setItem(
+
+      'loggedInUser',
+
+      JSON.stringify(user)
+
+    );
+
+
+    return true;
+
+  }
+
+
+  // ======================================
+  // LOGOUT
+  // ======================================
+
+  logout(): void {
+
+    localStorage.removeItem(
+      'loggedInUser'
+    );
+
+  }
+
+
+  // ======================================
+  // CHECK LOGIN
+  // ======================================
+
+  isLoggedIn(): boolean {
+
+    return !!localStorage.getItem(
+      'loggedInUser'
     );
 
   }

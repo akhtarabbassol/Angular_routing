@@ -1,44 +1,76 @@
-import { Injectable } from '@angular/core';
+import {
+  Injectable
+} from '@angular/core';
 
-import { MsalService } from '@azure/msal-angular';
+import {
+  MsalService
+} from '@azure/msal-angular';
+
 
 @Injectable({
   providedIn: 'root'
 })
 export class MicrosoftService {
 
+
   constructor(
-    private msalService: MsalService
+    private msalService:
+      MsalService
   ) {}
 
 
-  connect() {
+  // ======================================
+  // CONNECT MICROSOFT
+  // ======================================
 
-    this.msalService.loginRedirect({
+  connect(): void {
 
-      scopes: [
+    this.msalService
+      .loginRedirect({
 
-        'User.Read',
+        scopes: [
 
-        'Mail.Read',
+          'User.Read',
 
-        'Mail.Send'
+          'Mail.Read',
 
-      ]
+          'Mail.ReadWrite',
 
-    });
+          'Mail.Send'
+
+        ]
+
+      });
 
   }
 
 
-  logout() {
+  // ======================================
+  // LOGOUT
+  // ======================================
 
-    this.msalService.logoutRedirect({
+  logout(): void {
 
-      postLogoutRedirectUri:
-        'http://localhost:4200'
+    this.msalService
+      .logoutRedirect({
 
-    });
+        postLogoutRedirectUri:
+          'http://localhost:4200'
+
+      });
+
+  }
+
+
+  // ======================================
+  // ACCOUNT
+  // ======================================
+
+  getAccount() {
+
+    return this.msalService
+      .instance
+      .getActiveAccount();
 
   }
 

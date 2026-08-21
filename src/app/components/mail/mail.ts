@@ -8,101 +8,171 @@ import {
 } from '@angular/common';
 
 import {
-  FormsModule
-} from '@angular/forms';
-
-import {
   MailService
 } from '../../services/mail.service';
 
 import {
-  AuthService
-} from '../../services/auth.service';
+  MicrosoftService
+} from '../../services/microsoft.service';
 
 
 @Component({
+
   selector: 'app-mail',
 
   standalone: true,
 
   imports: [
-    CommonModule,
-    FormsModule
+    CommonModule
   ],
 
-  templateUrl: './mail.html'
+  templateUrl:
+    './mail.html'
+
 })
-export class Mail implements OnInit {
+export class Mail
+  implements OnInit {
 
-  emails: any[] = [];
 
-  selectedEmail: any = null;
+  mails: any[] = [];
+
+  selectedFolder =
+    'inbox';
 
   loading = false;
-
-  replyText = '';
-
-  sendingReply = false;
 
   errorMessage = '';
 
 
+  folders = [
+
+    {
+      name: 'Inbox',
+      value: 'inbox'
+    },
+
+    {
+      name: 'Sent',
+      value: 'sentitems'
+    },
+
+    {
+      name: 'Drafts',
+      value: 'drafts'
+    },
+
+    {
+      name: 'Deleted',
+      value: 'deleteditems'
+    }
+
+  ];
+
+
   constructor(
-    private mailService: MailService,
-    private authService: AuthService
+
+    private mailService:
+      MailService,
+
+    private microsoftService:
+      MicrosoftService
+
   ) {}
 
 
-  ngOnInit() {
-    this.loadInbox();
+  ngOnInit(): void {
+
+    this.loadMails(
+      'inbox'
+    );
+
   }
 
 
-  loadInbox() {
+  // ======================================
+  // LOAD MAILS
+  // ======================================
+
+  loadMails(
+    folder: string
+  ): void {
+
+
+    console.log(
+      'Calling loadMails:',
+      folder
+    );
+
+
+    this.selectedFolder =
+      folder;
+
 
     this.loading = true;
 
-    this.mailService.getInbox().subscribe({
+    this.errorMessage = '';
 
-      next: (response) => {
+    this.mails = [];
 
-        this.emails = response.value || [];
-
-        this.loading = false;
-
-      },
-
-      error: (error) => {
-
-        console.error(error);
-
-        this.errorMessage =
-          'Unable to load your inbox.';
-
-        this.loading = false;
-
-      }
-
-    });
-
-  }
-
-
-  openEmail(email: any) {
 
     this.mailService
-      .getEmail(email.id)
+      .getMails(folder)
       .subscribe({
 
-        next: (response) => {
+        next: (response: any) => {
 
-          this.selectedEmail = response;
+
+          console.log(
+            'Graph response:',
+            response
+          );
+
+
+          this.mails =
+            response?.value ?? [];
+
+
+          console.log(
+            'Number of emails:',
+            this.mails.length
+          );
+
+
+          this.loading =
+            false;
 
         },
 
+
         error: (error) => {
 
-          console.error(error);
+
+          console.error(
+            'Mail loading error:',
+            error
+          );
+
+
+          this.loading =
+            false;
+
+
+          this.errorMessage =
+            'Unable to load emails.';
+
+        },
+
+
+        complete: () => {
+
+
+          console.log(
+            'Mail request completed'
+          );
+
+
+          this.loading =
+            false;
 
         }
 
@@ -111,50 +181,50 @@ export class Mail implements OnInit {
   }
 
 
-  closeEmail() {
+  // ======================================
+  // DELETE
+  // ======================================
 
-    this.selectedEmail = null;
+  deleteMail(
+    id: string
+  ): void {
 
-    this.replyText = '';
-
-  }
-
-
-  sendReply() {
 
     if (
-      !this.selectedEmail ||
-      !this.replyText.trim()
+      !confirm(
+        'Delete this email?'
+      )
     ) {
+
       return;
+
     }
 
-    this.sendingReply = true;
 
     this.mailService
-      .reply(
-        this.selectedEmail.id,
-        this.replyText
-      )
+      .deleteMail(id)
       .subscribe({
 
         next: () => {
 
-          this.sendingReply = false;
 
-          this.replyText = '';
+          this.mails =
+            this.mails.filter(
 
-          alert('Reply sent successfully!');
+              mail =>
+                mail.id !== id
+
+            );
 
         },
 
+
         error: (error) => {
 
-          console.error(error);
-
-          this.sendingReply = false;
-
-          alert('Failed to send reply.');
+          console.error(
+            'Delete error:',
+            error
+          );
 
         }
 
@@ -163,10 +233,15 @@ export class Mail implements OnInit {
   }
 
 
-logout() {
-  localStorage.removeItem('users');
+  // ======================================
+  // LOGOUT
+  // ======================================
 
-  window.location.href = '/';
-}
+  logout(): void {
+
+    this.microsoftService
+      .logout();
+
+  }
 
 }

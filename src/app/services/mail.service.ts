@@ -3,12 +3,25 @@ import {
 } from '@angular/core';
 
 import {
-  HttpClient
+  HttpClient,
+  HttpHeaders
 } from '@angular/common/http';
 
 import {
-  Observable
+  MsalService
+} from '@azure/msal-angular';
+
+import {
+  Observable,
+  from,
+  throwError
 } from 'rxjs';
+
+import {
+  map,
+  switchMap,
+  catchError
+} from 'rxjs/operators';
 
 
 @Injectable({
@@ -16,164 +29,349 @@ import {
 })
 export class MailService {
 
+
   private graphUrl =
     'https://graph.microsoft.com/v1.0';
 
 
   constructor(
-    private http: HttpClient
+
+    private http:
+      HttpClient,
+
+    private msalService:
+      MsalService
+
   ) {}
 
 
-  // ===============================
-  // Get Inbox
-  // ===============================
+  // ======================================
+  // GET ACCESS TOKEN
+  // ======================================
 
-  getInbox(): Observable<any> {
+  private getAccessToken():
+    Observable<string> {
 
-    return this.http.get(
 
-      `${this.graphUrl}/me/mailFolders/inbox/messages`,
+    const account =
+      this.msalService
+        .instance
+        .getActiveAccount();
 
-      {
 
-        params: {
+    console.log(
+      'Active Microsoft account:',
+      account?.username
+    );
 
-          '$top': '20',
 
-          '$select':
-            'id,subject,from,receivedDateTime,' +
-            'isRead,bodyPreview,body',
+    if (!account) {
 
-          '$orderby':
-            'receivedDateTime DESC'
+      return throwError(
 
-        }
+        () =>
+          new Error(
+            'No active Microsoft account.'
+          )
 
-      }
+      );
+
+    }
+
+
+    return from(
+
+      this.msalService
+        .instance
+        .acquireTokenSilent({
+
+          account,
+
+          scopes: [
+
+            'User.Read',
+
+            'Mail.Read',
+
+            'Mail.ReadWrite',
+
+            'Mail.Send'
+
+          ]
+
+        })
+
+    ).pipe(
+
+      map(result => {
+
+        console.log(
+          'Access token received'
+        );
+
+        return result.accessToken;
+
+      }),
+
+      catchError(error => {
+
+        console.error(
+          'Access token error:',
+          error
+        );
+
+        return throwError(
+          () => error
+        );
+
+      })
 
     );
 
   }
 
 
-  // ===============================
-  // Get one email
-  // ===============================
+  // ======================================
+  // GET PROFILE
+  // ======================================
 
-  getEmail(
-    id: string
-  ): Observable<any> {
+  getProfile(): Observable<any> {
 
-    return this.http.get(
+    return this.getAccessToken().pipe(
 
-      `${this.graphUrl}/me/messages/${id}`,
+      switchMap(token => {
 
-      {
+        const headers =
+          new HttpHeaders({
 
-        params: {
+            Authorization:
+              `Bearer ${token}`
 
-          '$select':
-            'id,subject,from,toRecipients,' +
-            'receivedDateTime,body,isRead'
+          });
 
-        }
 
-      }
+        return this.http.get(
+
+          `${this.graphUrl}/me`,
+
+          {
+            headers
+          }
+
+        );
+
+      })
 
     );
 
   }
 
 
-  // ===============================
-  // Reply
-  // ===============================
+  // ======================================
+  // GET MAILS
+  // ======================================
 
-  reply(
-
-    messageId: string,
-
-    content: string
-
+  getMails(
+    folder: string
   ): Observable<any> {
 
-    return this.http.post(
 
-      `${this.graphUrl}/me/messages/${messageId}/reply`,
+    return this.getAccessToken().pipe(
 
-      {
+      switchMap(token => {
 
-        message: {
 
-          body: {
+        const headers =
+          new HttpHeaders({
 
-            contentType: 'Text',
+            Authorization:
+              `Bearer ${token}`
 
-            content: content
+          });
+
+
+        const url =
+          `${this.graphUrl}` +
+          `/me/mailFolders/` +
+          `${folder}/messages`;
+
+
+        console.log(
+          'Graph API URL:',
+          url
+        );
+
+
+        return this.http.get(
+
+          url,
+
+          {
+
+            headers,
+
+            params: {
+
+              '$top': '25',
+
+              '$orderby':
+                'receivedDateTime DESC',
+
+              '$select':
+                'id,' +
+                'subject,' +
+                'from,' +
+                'toRecipients,' +
+                'bodyPreview,' +
+                'receivedDateTime,' +
+                'isRead'
+
+            }
 
           }
 
-        }
+        );
 
-      }
+      }),
+
+      catchError(error => {
+
+        console.error(
+          'Microsoft Graph error:',
+          error
+        );
+
+        return throwError(
+          () => error
+        );
+
+      })
 
     );
 
   }
 
 
-  // ===============================
-  // Send new email
-  // ===============================
+  // ======================================
+  // DELETE EMAIL
+  // ======================================
 
-  sendEmail(
+  deleteMail(
+    id: string
+  ): Observable<any> {
+
+
+    return this.getAccessToken().pipe(
+
+      switchMap(token => {
+
+
+        const headers =
+          new HttpHeaders({
+
+            Authorization:
+              `Bearer ${token}`
+
+          });
+
+
+        return this.http.delete(
+
+          `${this.graphUrl}/me/messages/${id}`,
+
+          {
+            headers
+          }
+
+        );
+
+      })
+
+    );
+
+  }
+
+
+  // ======================================
+  // SEND EMAIL
+  // ======================================
+
+  sendMail(
 
     to: string,
 
     subject: string,
 
-    content: string
+    body: string
 
   ): Observable<any> {
 
-    return this.http.post(
 
-      `${this.graphUrl}/me/sendMail`,
+    return this.getAccessToken().pipe(
 
-      {
+      switchMap(token => {
 
-        message: {
 
-          subject: subject,
+        const headers =
+          new HttpHeaders({
 
-          body: {
+            Authorization:
+              `Bearer ${token}`,
 
-            contentType: 'Text',
+            'Content-Type':
+              'application/json'
 
-            content: content
+          });
 
-          },
 
-          toRecipients: [
+        const email = {
 
-            {
+          message: {
 
-              emailAddress: {
+            subject,
 
-                address: to
+            body: {
+
+              contentType: 'Text',
+
+              content: body
+
+            },
+
+            toRecipients: [
+
+              {
+
+                emailAddress: {
+
+                  address: to
+
+                }
 
               }
 
-            }
+            ]
 
-          ]
+          },
 
-        },
+          saveToSentItems: true
 
-        saveToSentItems: true
+        };
 
-      }
+
+        return this.http.post(
+
+          `${this.graphUrl}/me/sendMail`,
+
+          email,
+
+          {
+            headers
+          }
+
+        );
+
+      })
 
     );
 

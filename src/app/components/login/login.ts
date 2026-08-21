@@ -1,13 +1,28 @@
 import { Component } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+
+import {
+  Router,
+  RouterLink
+} from '@angular/router';
+
+import { CommonModule } from '@angular/common';
+
 import { AuthService } from '../../services/auth.service';
+
+import {
+  MicrosoftService
+} from '../../services/microsoft.service';
+
 
 @Component({
   selector: 'app-login',
+
   standalone: true,
 
   imports: [
+    CommonModule,
     FormsModule,
     RouterLink
   ],
@@ -16,26 +31,49 @@ import { AuthService } from '../../services/auth.service';
 })
 export class Login {
 
-  usernameOrEmail = '';
+  identifier = '';
+
   password = '';
 
   errorMessage = '';
 
+  loading = false;
+
+
   constructor(
     private authService: AuthService,
+
+    private microsoftService:
+      MicrosoftService,
+
     private router: Router
   ) {}
 
-  login() {
+
+  login(): void {
 
     this.errorMessage = '';
 
-    const user = this.authService.login(
-      this.usernameOrEmail,
-      this.password
-    );
+    if (
+      !this.identifier.trim() ||
+      !this.password
+    ) {
 
-    if (!user) {
+      this.errorMessage =
+        'Please enter email/username and password.';
+
+      return;
+    }
+
+
+    const result =
+      this.authService.login(
+        this.identifier,
+        this.password
+      );
+
+
+    if (!result) {
 
       this.errorMessage =
         'Invalid username/email or password.';
@@ -43,7 +81,15 @@ export class Login {
       return;
     }
 
-    this.router.navigate(['/connect']);
+
+    this.router.navigate(['/mail']);
+
+  }
+
+
+  connectMicrosoft(): void {
+
+    this.microsoftService.connect();
 
   }
 

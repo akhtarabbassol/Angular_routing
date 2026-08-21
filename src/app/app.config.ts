@@ -1,18 +1,26 @@
-import { ApplicationConfig } from '@angular/core';
+import {
+  ApplicationConfig,
+  inject,
+  provideAppInitializer
+} from '@angular/core';
 
-import { provideRouter } from '@angular/router';
+import {
+  provideRouter
+} from '@angular/router';
 
-import { provideHttpClient } from '@angular/common/http';
+import {
+  provideHttpClient
+} from '@angular/common/http';
 
 import {
   MSAL_INSTANCE,
   MSAL_GUARD_CONFIG,
   MSAL_INTERCEPTOR_CONFIG,
-  MsalGuardConfiguration,
-  MsalInterceptorConfiguration,
-  MsalService,
   MsalGuard,
-  MsalBroadcastService
+  MsalService,
+  MsalBroadcastService,
+  MsalGuardConfiguration,
+  MsalInterceptorConfiguration
 } from '@azure/msal-angular';
 
 import {
@@ -23,9 +31,9 @@ import {
 import { routes } from './app.routes';
 
 
-// ======================================
+// ========================================
 // MSAL INSTANCE
-// ======================================
+// ========================================
 
 export function MSALInstanceFactory() {
 
@@ -34,7 +42,7 @@ export function MSALInstanceFactory() {
     auth: {
 
       clientId:
-        'YOUR_CLIENT_ID',
+        '3d853b6c-ce0b-441b-9e88-4d82303fc398',
 
       authority:
         'https://login.microsoftonline.com/common',
@@ -59,12 +67,11 @@ export function MSALInstanceFactory() {
 }
 
 
-// ======================================
-// MSAL GUARD CONFIG
-// ======================================
+// ========================================
+// GUARD CONFIG
+// ========================================
 
 export function MSALGuardConfigFactory():
-
   MsalGuardConfiguration {
 
   return {
@@ -77,12 +84,11 @@ export function MSALGuardConfigFactory():
 }
 
 
-// ======================================
-// MSAL INTERCEPTOR CONFIG
-// ======================================
+// ========================================
+// INTERCEPTOR CONFIG
+// ========================================
 
 export function MSALInterceptorConfigFactory():
-
   MsalInterceptorConfiguration {
 
   const protectedResourceMap =
@@ -96,6 +102,7 @@ export function MSALInterceptorConfigFactory():
     [
       'User.Read',
       'Mail.Read',
+      'Mail.ReadWrite',
       'Mail.Send'
     ]
 
@@ -114,31 +121,24 @@ export function MSALInterceptorConfigFactory():
 }
 
 
-// ======================================
-// APP CONFIG
-// ======================================
+// ========================================
+// APPLICATION CONFIG
+// ========================================
 
 export const appConfig: ApplicationConfig = {
 
   providers: [
 
-    // Angular Router
-
     provideRouter(routes),
-
-
-    // HttpClient
 
     provideHttpClient(),
 
 
-    // =================================
     // MSAL
-    // =================================
 
     {
-
-      provide: MSAL_INSTANCE,
+      provide:
+        MSAL_INSTANCE,
 
       useFactory:
         MSALInstanceFactory
@@ -147,8 +147,8 @@ export const appConfig: ApplicationConfig = {
 
 
     {
-
-      provide: MSAL_GUARD_CONFIG,
+      provide:
+        MSAL_GUARD_CONFIG,
 
       useFactory:
         MSALGuardConfigFactory
@@ -157,8 +157,8 @@ export const appConfig: ApplicationConfig = {
 
 
     {
-
-      provide: MSAL_INTERCEPTOR_CONFIG,
+      provide:
+        MSAL_INTERCEPTOR_CONFIG,
 
       useFactory:
         MSALInterceptorConfigFactory
@@ -166,13 +166,26 @@ export const appConfig: ApplicationConfig = {
     },
 
 
-    // IMPORTANT
-
     MsalService,
 
     MsalGuard,
 
-    MsalBroadcastService
+    MsalBroadcastService,
+
+
+    // IMPORTANT:
+    // Initialize MSAL before using it
+
+    provideAppInitializer(() => {
+
+      const msalService =
+        inject(MsalService);
+
+      return msalService
+        .instance
+        .initialize();
+
+    })
 
   ]
 
