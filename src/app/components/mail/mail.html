@@ -1,0 +1,549 @@
+<div class="h-screen bg-gray-100 flex flex-col">
+
+
+  <!-- ================= HEADER ================= -->
+
+  <header
+    class="h-16
+           bg-white
+           border-b
+           flex
+           items-center
+           justify-between
+           px-6
+           shadow-sm"
+  >
+
+    <div class="flex items-center gap-3">
+
+      <div
+        class="w-10
+               h-10
+               bg-blue-600
+               rounded-lg
+               flex
+               items-center
+               justify-center
+               text-white
+               text-xl"
+      >
+        ✉
+      </div>
+
+      <h1
+        class="text-xl
+               font-bold
+               text-gray-800"
+      >
+        My Mail
+      </h1>
+
+    </div>
+
+
+    <button
+      (click)="logout()"
+
+      class="px-4
+             py-2
+             rounded-lg
+             bg-red-500
+             hover:bg-red-600
+             text-white"
+    >
+
+      Logout
+
+    </button>
+
+  </header>
+
+
+  <!-- ================= BODY ================= -->
+
+  <div class="flex flex-1 overflow-hidden">
+
+
+    <!-- ================= SIDEBAR ================= -->
+
+    <aside
+      class="w-64
+             bg-white
+             border-r
+             p-4
+             hidden
+             md:block"
+    >
+
+      <button
+        class="w-full
+               bg-blue-600
+               text-white
+               py-3
+               rounded-xl
+               font-semibold
+               mb-6"
+      >
+
+        + Compose
+
+      </button>
+
+
+      <nav class="space-y-2">
+
+        <button
+          class="w-full
+                 text-left
+                 px-4
+                 py-3
+                 bg-blue-50
+                 text-blue-700
+                 rounded-lg
+                 font-semibold"
+        >
+
+          📥 Inbox
+
+        </button>
+
+
+        <button
+          class="w-full
+                 text-left
+                 px-4
+                 py-3
+                 hover:bg-gray-100
+                 rounded-lg"
+        >
+
+          📤 Sent
+
+        </button>
+
+
+        <button
+          class="w-full
+                 text-left
+                 px-4
+                 py-3
+                 hover:bg-gray-100
+                 rounded-lg"
+        >
+
+          📝 Drafts
+
+        </button>
+
+
+        <button
+          class="w-full
+                 text-left
+                 px-4
+                 py-3
+                 hover:bg-gray-100
+                 rounded-lg"
+        >
+
+          🗑 Deleted
+
+        </button>
+
+      </nav>
+
+    </aside>
+
+
+    <!-- ================= EMAIL LIST ================= -->
+
+    <main
+      class="w-full
+             md:w-1/2
+             bg-white
+             border-r
+             overflow-y-auto"
+    >
+
+      <div
+        class="p-5
+               border-b
+               flex
+               items-center
+               justify-between"
+      >
+
+        <h2
+          class="text-xl
+                 font-bold"
+        >
+
+          Inbox
+
+        </h2>
+
+
+        <button
+          (click)="loadInbox()"
+          class="text-blue-600
+                 hover:text-blue-800"
+        >
+
+          ↻ Refresh
+
+        </button>
+
+      </div>
+
+
+      <!-- Loading -->
+
+      @if (loading) {
+
+        <div class="p-10 text-center">
+
+          <div
+            class="animate-spin
+                   rounded-full
+                   h-10
+                   w-10
+                   border-b-2
+                   border-blue-600
+                   mx-auto"
+          ></div>
+
+          <p class="mt-3 text-gray-500">
+            Loading emails...
+          </p>
+
+        </div>
+
+      }
+
+
+      <!-- Error -->
+
+      @if (errorMessage) {
+
+        <div
+          class="m-4
+                 p-4
+                 bg-red-100
+                 text-red-700
+                 rounded-lg"
+        >
+
+          {{ errorMessage }}
+
+        </div>
+
+      }
+
+
+      <!-- Emails -->
+
+      @for (
+        email of emails;
+        track email.id
+      ) {
+
+        <div
+          (click)="openEmail(email)"
+
+          class="p-5
+                 border-b
+                 hover:bg-gray-50
+                 cursor-pointer
+                 transition"
+        >
+
+          <div
+            class="flex
+                   justify-between
+                   gap-3"
+          >
+
+            <div>
+
+              <p
+                class="font-semibold
+                       text-gray-800"
+              >
+
+                {{
+                  email.from?.emailAddress?.name
+                    ||
+                  email.from?.emailAddress?.address
+                }}
+
+              </p>
+
+              <p
+                class="font-medium
+                       text-gray-700
+                       mt-1"
+              >
+
+                {{ email.subject || '(No Subject)' }}
+
+              </p>
+
+            </div>
+
+
+            <span
+              class="text-xs
+                     text-gray-400
+                     whitespace-nowrap"
+            >
+
+              {{
+                email.receivedDateTime
+                  | date:'short'
+              }}
+
+            </span>
+
+          </div>
+
+
+          <p
+            class="text-sm
+                   text-gray-500
+                   mt-2
+                   line-clamp-2"
+          >
+
+            {{ email.bodyPreview }}
+
+          </p>
+
+        </div>
+
+      }
+
+
+      @if (
+        !loading &&
+        emails.length === 0
+      ) {
+
+        <div
+          class="p-10
+                 text-center
+                 text-gray-500"
+        >
+
+          No emails found.
+
+        </div>
+
+      }
+
+    </main>
+
+
+    <!-- ================= EMAIL VIEW ================= -->
+
+    <section
+      class="hidden
+             md:flex
+             flex-1
+             bg-gray-50
+             flex-col"
+    >
+
+      @if (!selectedEmail) {
+
+        <div
+          class="flex-1
+                 flex
+                 items-center
+                 justify-center
+                 text-gray-400"
+        >
+
+          <div class="text-center">
+
+            <div class="text-6xl mb-4">
+              ✉
+            </div>
+
+            <p>
+              Select an email to read
+            </p>
+
+          </div>
+
+        </div>
+
+      }
+
+
+      @if (selectedEmail) {
+
+        <!-- Email Header -->
+
+        <div
+          class="bg-white
+                 border-b
+                 p-6"
+        >
+
+          <button
+            (click)="closeEmail()"
+            class="text-blue-600
+                   mb-4"
+          >
+
+            ← Back
+
+          </button>
+
+
+          <h2
+            class="text-2xl
+                   font-bold
+                   text-gray-800"
+          >
+
+            {{ selectedEmail.subject }}
+
+          </h2>
+
+
+          <div class="mt-4">
+
+            <p
+              class="font-semibold"
+            >
+
+              {{
+                selectedEmail
+                  .from
+                  ?.emailAddress
+                  ?.name
+              }}
+
+            </p>
+
+            <p
+              class="text-sm
+                     text-gray-500"
+            >
+
+              {{
+                selectedEmail
+                  .from
+                  ?.emailAddress
+                  ?.address
+              }}
+
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <!-- Email Body -->
+
+        <div
+          class="flex-1
+                 overflow-y-auto
+                 p-6"
+        >
+
+          <div
+            class="bg-white
+                   rounded-xl
+                   shadow-sm
+                   p-6"
+          >
+
+            <div
+              [innerHTML]="
+                selectedEmail.body?.content
+              "
+            ></div>
+
+          </div>
+
+        </div>
+
+
+        <!-- Reply -->
+
+        <div
+          class="bg-white
+                 border-t
+                 p-4"
+        >
+
+          <textarea
+
+            [(ngModel)]="replyText"
+
+            rows="4"
+
+            placeholder="Write your reply..."
+
+            class="w-full
+                   border
+                   border-gray-300
+                   rounded-xl
+                   p-4
+                   focus:outline-none
+                   focus:ring-2
+                   focus:ring-blue-500"
+
+          ></textarea>
+
+
+          <div
+            class="flex
+                   justify-end
+                   mt-3"
+          >
+
+            <button
+
+              (click)="sendReply()"
+
+              [disabled]="
+                sendingReply ||
+                !replyText.trim()
+              "
+
+              class="px-6
+                     py-3
+                     bg-blue-600
+                     hover:bg-blue-700
+                     disabled:bg-gray-400
+                     text-white
+                     rounded-xl
+                     font-semibold"
+            >
+
+              @if (sendingReply) {
+
+                Sending...
+
+              } @else {
+
+                Send Reply
+
+              }
+
+            </button>
+
+          </div>
+
+        </div>
+
+      }
+
+    </section>
+
+  </div>
+
+</div>
